@@ -1,0 +1,138 @@
+<template>
+  <div class="relative w-full p-2 rounded-3xl bg-white/90 dark:bg-black/70 overflow-hidden">
+    <!-- Background gradient -->
+    <div
+      class="absolute inset-0 z-0 opacity-15"
+      :style="gradientStyle"
+    />
+
+    <!-- Editable area with tables -->
+    <div
+      ref="editor"
+      contenteditable="true"
+      :placeholder="placeholderText"
+      :style="editorStyle"
+      :class="editorClasses"
+      class="max-h-[30rem] overflow-auto has-scrollbar text-zinc-700 dark:text-zinc-200 selection:bg-zinc-300 dark:selection:bg-zinc-700 selection:rounded-xl relative z-10"
+      @input="updateContent"
+      @mouseup="handleSelection"
+      @keyup="handleSelection"
+      @click="handleLinkClick"
+    >
+      <!-- Render content with inline tables -->
+      <div v-if="parsedContent.length > 0">
+        <template v-for="(block, index) in parsedContent" :key="index">
+          <!-- Text content -->
+          <div v-if="block.type === 'text'" v-html="block.content" />
+          
+          <!-- Inline table -->
+          <InlineTableEditor
+            v-else-if="block.type === 'table'"
+            :model-value="block.content"
+            @update:model-value="updateTableBlock(index, $event)"
+            @remove="removeTableBlock(index)"
+            @duplicate="duplicateTableBlock(index, $event)"
+          />
+        </template>
+      </div>
+    </div>
+
+    <!-- Placeholder -->
+    <span
+      v-if="!content"
+      class="absolute top-4 left-4 right-4 text-zinc-400 pointer-events-none select-none w-full"
+      :style="{ fontSize: editorStyle.fontSize, fontWeight: editorStyle.fontWeight, fontFamily: editorStyle.fontFamily, textAlign: editorStyle.textAlign }"
+    >
+      {{ placeholderText }}
+    </span>
+
+    <!-- Overlay -->
+    <div v-if="isOpen" @click="isOpen = false" class="absolute inset-0 z-10 opacity-35" />
+
+    <!-- Toolbar -->
+    <AnimatePresence :initial="false">
+      <motion.div
+        v-if="isOpen"
+        ref="toolbar"
+        :style="toolbarStyle"
+        :class="toolbarClasses"
+        :initial="motionInitial"
+        :animate="motionAnimate"
+        :exit="motionExit"
+        :transition="motionTransition"
+      >
+        <div class="relative">
+          <div class="absolute left-2 bottom-full translate-y-0 transform w-3 h-3 rotate-45 bg-white dark:bg-black" />
+          <div class="flex items-center gap-1 relative z-[1]">
+            <!-- Standard formatting buttons -->
+            <ButtonIcon
+              v-for="btn in toolbarButtons"
+              :key="btn.label"
+              :isActive="btn.active"
+              @mousedown.prevent.stop="btn.action"
+              radius="lg"
+            >
+              <component :is="btn.icon" />
+            </ButtonIcon>
+
+            <!-- Table insert button -->
+            <TableInsertButton @insert-table="insertTable" />
+
+            <!-- Color pickers -->
+            <label>
+              <input type="color" @input="e => applyBackgroundColor((e.target as HTMLInputElement).value)" class="w-6 h-6"/>
+            </label>
+            <label>
+              <input type="color" @input="e => applyTextColor((e.target as HTMLInputElement).value)" class="w-6 h-6"/>
+            </label>
+          </div>
+
+          <!-- Link Input -->
+          <transition name="slide-fade" class="mt-2">
+            <input
+              v-if="showLinkInput" 
+              id="editor-link-input"
+              v-model="linkUrl"
+              type="text" 
+              placeholder="Enter link" 
+              @blur="showLinkInput = false" 
+              @keydown="handleLinkInputKeydown"
+              @keydown.enter="applyLink()"
+              @keydown.esc="showLinkInput = false"
+              class="w-full py-1 px-2 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 outline-none focus:outline-none text-sm"
+            />
+          </transition>
+        </div>
+      </motion.div>
+    </AnimatePresence>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { cn } from '../../lib/utils'
+import { useEditorStoreFactory } from '../../stores/index'
+import { computed, onMounted, ref, watch } from 'vue'
+import { motion, AnimatePresence } from 'motion-v'
+import { Bold, Italic, Link, Strikethrough, Underline } from 'lucide-vue-next'
+import ButtonIcon from '../ui/ButtonIcon.vue'
+import { useEditorCommands, useEditorLink, useEditorSelection } from '../composables'
+
+// Import table components
+import InlineTableEditor from './InlineTableEditor.vue'
+import TableInsertButton from './TableInsertButton.vue'
+
+// Props / Emits
+const props = defineProps<{ 
+  editorId: string
+  placeholder?: string
+  modelValue?: string
+}>()
+
+const emit = defineEmits<{(e: 'update:modelValue', value: string): void}>()
+
+// State
+const isOpen = ref(false)
+const toolbarStyle = ref({})
+const editor = ref<HTMLElement | null>(null)
+const content = ref('')
+const contentBlocks = ref<Array<{type: 'text' |
