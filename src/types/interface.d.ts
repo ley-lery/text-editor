@@ -6,8 +6,17 @@ type TextAlign = 'left' | 'center' | 'right' | 'justify'
 type BulletList = 'default' | 'disc' | 'circle' | 'square'
 type NumberList = 'default' | 'decimal' | 'lower-alpha' | 'upper-alpha' | 'lower-roman' | 'upper-roman'
 type Link = string
-type Capitalize = 'none' | 'lowercase' | 'uppercase' | 'capitalize'
-
+type Capitalizes = 'none' | 'lowercase' | 'uppercase' | 'capitalize'
+interface StoreProperty {
+    label: string
+    value: Ref<any>
+    type: 'number' | 'text' | 'color' | 'select' | null
+    min?: number
+    max?: number
+    step?: number
+    unit?: string
+    options?: readonly string[]
+}
 
 // Table
 // types.ts - TypeScript Interface Definitions

@@ -27,7 +27,7 @@
       <div
         v-show="isOpen"
         ref="dropdown"
-        class="absolute left-0 mt-2 w-full bg-zinc-200 dark:bg-zinc-800 rounded-2xl shadow-lg overflow-hidden z-20 p-2"
+        class="absolute left-0 mt-2 w-full bg-zinc-200 dark:bg-zinc-800 rounded-2xl shadow-lg overflow-auto scrollbar-none z-20 p-2 max-h-60 "
       >
         <ul>
           <li
@@ -36,7 +36,11 @@
             @click="selectOption(option)"
             class="px-2 py-1 rounded-xl cursor-pointer hover:bg-zinc-100/50 dark:hover:bg-zinc-100/10 text-zinc-500 dark:text-zinc-400 text-base transition"
           >
-            {{ option.label }}
+            <div class="flex items-center gap-2">
+              <slot name="itemStartContent" />
+              {{ option.label }}
+            </div>
+            <slot name="itemEndContent" />
           </li>
         </ul>
       </div>
@@ -58,6 +62,8 @@
     options: Option[];
     modelValue?: string | number | null;
     placeholder?: string;
+    itemStartContent?: string | Node;
+    itemEndContent?: string | Node;
   }>();
   
   const emit = defineEmits<{

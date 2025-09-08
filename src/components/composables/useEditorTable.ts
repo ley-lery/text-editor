@@ -1,18 +1,70 @@
-import { ref, computed } from 'vue'
-import { useDisclosure } from '../../hooks/useDisclosure'
+import { ref, computed, onUnmounted } from 'vue'
 
-export function useEditorTable(editor: any, updateContent: () => void) {
-    const { isOpen, onOpen, onClose } = useDisclosure()
+export const showTableGrid = {
+    showTableGrid: ref(false),
+    closeTableModal: () => {
+        showTableGrid.showTableGrid.value = false
+    }
+}
+
+export function useEditorTable(editor: HTMLElement | null | any, updateContent: () => void) {
     // Table Modal State
     const maxGridSize = 10
-    const selectedRows = ref(1)
-    const selectedCols = ref(1)
+    const selectedRows = ref<number>(1)
+    const selectedCols = ref<number>(1)
 
     // Cell selection and merging state
     const selectedCells = ref<HTMLTableCellElement[]>([])
     const showMergePopover = ref(false)
+    const showStylePopover = ref(false)
     const mergePopoverPosition = ref({ top: 0, left: 0 })
+    const stylePopoverPosition = ref({ top: 0, left: 0 })
     const isSelecting = ref(false)
+    
+    
+
+    // Cell styling state
+    const availableBackgroundColors = [
+        { name: 'Default', value: 'transparent' },
+        { name: 'Light Gray', value: '#f8f9fa' },
+        { name: 'Light Blue', value: '#e3f2fd' },
+        { name: 'Light Green', value: '#e8f5e8' },
+        { name: 'Light Yellow', value: '#fff3cd' },
+        { name: 'Light Red', value: '#f8d7da' },
+        { name: 'Light Purple', value: '#e7e3ff' },
+        { name: 'Dark Gray', value: '#6c757d' },
+        { name: 'Blue', value: '#007bff' },
+        { name: 'Green', value: '#28a745' },
+        { name: 'Yellow', value: '#ffc107' },
+        { name: 'Red', value: '#dc3545' },
+        { name: 'Purple', value: '#6f42c1' }
+    ]
+    
+    const availableTextColors = [
+        { name: 'Default', value: 'transparent' },
+        { name: 'Light Gray', value: '#f8f9fa' },
+        { name: 'Light Blue', value: '#e3f2fd' },
+        { name: 'Light Green', value: '#e8f5e8' },
+        { name: 'Light Yellow', value: '#fff3cd' },
+        { name: 'Light Red', value: '#f8d7da' },
+        { name: 'Light Purple', value: '#e7e3ff' },
+        { name: 'Dark Gray', value: '#6c757d' },
+        { name: 'Blue', value: '#007bff' },
+        { name: 'Green', value: '#28a745' },
+        { name: 'Yellow', value: '#ffc107' },
+        { name: 'Red', value: '#dc3545' },
+        { name: 'Purple', value: '#6f42c1' }
+    ]
+
+    const textAlign = ref('left')
+    const verticalAlign = ref('top')
+    const cellBackgroundColor = ref('transparent')
+    const fontSize = ref('16px')
+    const fontWeight = ref('normal')
+    const fontStyle = ref('normal')
+    const textDecoration = ref('none')
+    const cellPadding = ref('8px')
+    const cellTextColor = ref('black')
 
     // Table Grid Computed
     const gridCells = computed(() => Array(maxGridSize * maxGridSize).fill(null))
@@ -26,15 +78,14 @@ export function useEditorTable(editor: any, updateContent: () => void) {
     })
 
     function openTableModal() {
-        onOpen()
+        showTableGrid.showTableGrid.value = true
         selectedRows.value = 1
         selectedCols.value = 1
     }
 
     function closeTableModal() {
         clearCellSelection()
-        removePreviewTable()
-        onClose()
+        showTableGrid.showTableGrid.value = false
     }
 
     function getGridPosition(index: number) {
@@ -48,63 +99,39 @@ export function useEditorTable(editor: any, updateContent: () => void) {
         return row < selectedRows.value && col < selectedCols.value
     }
 
-    let previewTable: HTMLTableElement | null = null
-
     function highlightGrid(index: number) {
         const { row, col } = getGridPosition(index)
         selectedRows.value = row + 1
         selectedCols.value = col + 1
 
-        showPreviewTable()
     }
 
-    function showPreviewTable() {
-        if (!editor.value) return
-
-        // Remove old preview if exists
-        removePreviewTable()
-
-        // Build preview table
-        const table = document.createElement('table')
-        table.className = 'editor-table preview-table'
-        table.style.cssText = 'border-collapse: collapse; width: 100%; margin: 10px 0; '
-
-        for (let r = 0; r < selectedRows.value; r++) {
-            const tr = document.createElement('tr')
-            for (let c = 0; c < selectedCols.value; c++) {
-                const td = document.createElement('td')
-                td.className = 'table-cell td-preview'
-                td.style.cssText = 'border: 1px dashed #ccc; height: 20px;'
-                tr.appendChild(td)
-            }
-            table.appendChild(tr)
-        }
-
-        // Insert at end of editor (or cursor position if you want advanced)
-        editor.value.appendChild(table)
-        previewTable = table
-    }
-
-    function removePreviewTable() {
-        if (previewTable && previewTable.parentNode) {
-            previewTable.parentNode.removeChild(previewTable)
-        }
-        previewTable = null
-    }
 
     function selectGrid(index: number) {
         const { row, col } = getGridPosition(index)
         selectedRows.value = row + 1
         selectedCols.value = col + 1
-        editor.value.focus()
+        console.log(editor, 'editor value')
+        
+        // Check if editor exists before trying to access its value
+        if (editor && editor.value) {
+            editor.value.focus()
+        }
+        
         insertTable()
+        closeTableModal()
     }
 
     function insertTable() {
-        if (!editor.value) return
+        if (!editor || !editor.value) return
 
         // Create table HTML with enhanced functionality
-        let tableHTML = '<table class="editor-table" style="border-collapse: collapse; width: 100%; margin: 10px 0;">'
+        let tableHTML = `<table class="editor-table" style="
+            border-collapse: collapse; 
+            width: 100%; 
+            margin: 10px 0;
+            border: 1px solid #dee2e6;
+        ">`
         
         for (let r = 0; r < selectedRows.value; r++) {
             tableHTML += '<tr>' 
@@ -114,6 +141,15 @@ export function useEditorTable(editor: any, updateContent: () => void) {
                     data-row="${r}" 
                     data-col="${c}"
                     class="table-cell"
+                    style="
+                        border: 1px solid #dee2e6;
+                        padding: 8px;
+                        min-height: 24px;
+                        min-width: 80px;
+                        vertical-align: top;
+                        background: transparent;
+                        text-align: left;
+                    "
                 >&nbsp;</td>`
             }
             tableHTML += '</tr>'
@@ -138,13 +174,18 @@ export function useEditorTable(editor: any, updateContent: () => void) {
             if (tableElement) {
                 range.insertNode(tableElement)
                 setupTableEventListeners(tableElement)
+                
+                // Add a paragraph after table for easier editing
+                const p = document.createElement('p')
+                p.innerHTML = '&nbsp;'
+                range.setStartAfter(tableElement)
+                range.insertNode(p)
             }
             
             // Move cursor after the table
             range.collapse(false)
             selection.removeAllRanges()
             selection.addRange(range)
-            removePreviewTable()
         } else {
             // Fallback: append to end of editor content
             editor.value.innerHTML += tableHTML
@@ -158,7 +199,9 @@ export function useEditorTable(editor: any, updateContent: () => void) {
         closeTableModal()
 
         // Focus back on editor
-        editor.value.focus()
+        setTimeout(() => {
+            editor.value.focus()
+        }, 100)
     }
 
     // Setup event listeners for table cells
@@ -166,13 +209,13 @@ export function useEditorTable(editor: any, updateContent: () => void) {
         const cells = table.querySelectorAll('td')
         
         cells.forEach(cell => {
-            // Cell selection for merging
+            // Cell selection for merging and styling
             cell.addEventListener('mousedown', handleCellMouseDown)
             cell.addEventListener('mouseenter', handleCellMouseEnter)
             cell.addEventListener('mouseup', handleCellMouseUp)
             cell.addEventListener('dblclick', handleCellDoubleClick)
             
-            // Right click for context menu (merge options)
+            // Right click for context menu
             cell.addEventListener('contextmenu', handleCellRightClick)
         })
 
@@ -208,12 +251,20 @@ export function useEditorTable(editor: any, updateContent: () => void) {
 
     function handleCellMouseUp(e: MouseEvent) {
         isSelecting.value = false
-        if (canMergeCells.value) {
-            showMergePopover.value = true
+        if (selectedCells.value.length >= 1) {
             const rect = (e.target as HTMLElement).getBoundingClientRect()
-            mergePopoverPosition.value = {
+            stylePopoverPosition.value = {
                 top: rect.bottom + window.scrollY + 5,
                 left: rect.left + window.scrollX
+            }
+            
+            if (canMergeCells.value) {
+                showMergePopover.value = true
+                showStylePopover.value = true
+                mergePopoverPosition.value = {
+                    top: rect.bottom + window.scrollY + 5,
+                    left: rect.right + window.scrollX + 10
+                }
             }
         }
     }
@@ -251,10 +302,18 @@ export function useEditorTable(editor: any, updateContent: () => void) {
         }
         
         if (selectedCells.value.length >= 1) {
-            showMergePopover.value = true
-            mergePopoverPosition.value = {
+            showStylePopover.value = true
+            stylePopoverPosition.value = {
                 top: e.clientY + window.scrollY,
                 left: e.clientX + window.scrollX
+            }
+            
+            if (canMergeCells.value) {
+                showMergePopover.value = true
+                mergePopoverPosition.value = {
+                    top: e.clientY + window.scrollY,
+                    left: e.clientX + window.scrollX + 200
+                }
             }
         }
     }
@@ -276,8 +335,109 @@ export function useEditorTable(editor: any, updateContent: () => void) {
         })
         selectedCells.value = []
         showMergePopover.value = false
+        showStylePopover.value = false
+    }
+    function handleCloseStylePopover() {
+        showStylePopover.value = false
     }
 
+    // Cell Styling Functions
+    function setCellBackgroundColor(color: string) {
+        selectedCells.value.forEach(cell => {
+            cell.style.backgroundColor = color
+        })
+        cellBackgroundColor.value = color
+        updateContent()
+    }
+    function setCellTextAlign(alignment: 'left' | 'center' | 'right' | 'justify') {
+        selectedCells.value.forEach(cell => {
+            cell.style.textAlign = alignment
+        })
+        textAlign.value = alignment
+        updateContent()
+    }
+
+    function setCellVerticalAlign(alignment: 'top' | 'middle' | 'bottom') {
+        selectedCells.value.forEach(cell => {
+            cell.style.verticalAlign = alignment
+        })
+        verticalAlign.value = alignment
+        updateContent()
+    }
+
+    function setCellBold(bold: boolean) {
+        selectedCells.value.forEach(cell => {
+            cell.style.fontWeight = bold ? 'bold' : 'normal'
+        })
+        fontWeight.value = bold ? 'bold' : 'normal'
+        updateContent()
+    }
+ 
+
+    function setCellItalic(italic: boolean) {
+        selectedCells.value.forEach(cell => {
+            cell.style.fontStyle = italic ? 'italic' : 'normal'
+        })
+        fontStyle.value = italic ? 'italic' : 'normal'
+        updateContent()
+    }
+
+    function setCellUnderline(underline: boolean) {
+        selectedCells.value.forEach(cell => {
+            cell.style.textDecoration = underline ? 'underline' : 'none'
+        })
+        textDecoration.value = underline ? 'underline' : 'none'
+        updateContent()
+    }
+
+    function setCellFontSize(size: string) {
+        selectedCells.value.forEach(cell => {
+            cell.style.fontSize = size
+        })
+        fontSize.value = size
+        updateContent()
+    }
+
+    function setCellTextColor(color: string) {
+        selectedCells.value.forEach(cell => {
+            cell.style.color = color
+        })
+        cellTextColor.value = color
+        updateContent()
+    }
+
+    function setCellPadding(padding: string) {
+        selectedCells.value.forEach(cell => {
+            cell.style.padding = padding
+        })
+        cellPadding.value = padding
+        updateContent()
+    }
+
+    function setCellBorder(border: string) {
+        selectedCells.value.forEach(cell => {
+            cell.style.border = border
+        })
+        updateContent()
+    }
+
+    function resetCellStyles() {
+        selectedCells.value.forEach(cell => {
+            // Reset to default table cell styles
+            cell.style.cssText = `
+                border: 1px solid #dee2e6;
+                padding: 8px;
+                min-height: 24px;
+                min-width: 80px;
+                vertical-align: top;
+                background: transparent;
+                text-align: left;
+            `
+        })
+        updateContent()
+    }
+
+    // Existing merge and table manipulation functions
     function mergeCells() {
         if (selectedCells.value.length < 2) return
 
@@ -538,6 +698,11 @@ export function useEditorTable(editor: any, updateContent: () => void) {
         updateContent()
     }
 
+    // Cleanup on unmount
+    onUnmounted(() => {
+        document.removeEventListener('mouseup', handleDocumentMouseUp)
+    })
+
     return {
         // State
         maxGridSize,
@@ -547,8 +712,14 @@ export function useEditorTable(editor: any, updateContent: () => void) {
         gridStyle,
         selectedCells,
         showMergePopover,
+        showStylePopover,
+        handleCloseStylePopover,
+        showTableGrid,
         mergePopoverPosition,
+        stylePopoverPosition,
         canMergeCells,
+        availableBackgroundColors,
+        availableTextColors,
         
         // Methods
         openTableModal,
@@ -560,6 +731,32 @@ export function useEditorTable(editor: any, updateContent: () => void) {
         insertTable,
         setupTableEventListeners,
         clearCellSelection,
+        
+        // Cell styling methods
+        setCellBackgroundColor,
+        setCellTextAlign,
+        setCellVerticalAlign,
+        setCellBold,
+        setCellItalic,
+        setCellUnderline,
+        setCellFontSize,
+        setCellTextColor,
+        setCellPadding,
+        setCellBorder,
+        resetCellStyles,
+        
+        // Cell Style State
+        textAlign,
+        verticalAlign,
+        cellBackgroundColor,
+        fontSize,
+        fontWeight,
+        fontStyle,
+        textDecoration,
+        cellPadding,
+        cellTextColor,
+        
+        // Table manipulation methods
         mergeCells,
         splitCell,
         deleteSelectedCells,

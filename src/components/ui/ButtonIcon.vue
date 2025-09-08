@@ -26,7 +26,7 @@ const radiusMaps = {
     'none': 'rounded-none',
     'sm': 'rounded-sm',
     'md': 'rounded-md',
-    'lg': 'rounded-lg',
+    'lg': 'rounded-xl',
     'full': 'rounded-full'
 }
 

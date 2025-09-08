@@ -28,10 +28,14 @@
         <div
           v-for="option in options"
           :key="option.value"
-          class="text-sm cursor-pointer text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-700/50 rounded-xl px-2 py-1 select-none"
+          class="flex items-center justify-between text-sm cursor-pointer text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-700/50 rounded-xl px-2 py-1 select-none"
           @click="selectOption(option)"
         >
-          {{ option.label }}
+          <div class="flex items-center gap-2">
+            <slot name="itemStartContent" />
+            <span>{{ option.label }}</span>
+          </div>
+          <slot name="itemEndContent" />
         </div>
 
         <!-- Bottom content slot -->
@@ -60,6 +64,8 @@ const props = defineProps({
   modelValue: [String, Number],
   topContent: Object as PropType<VNodeChild>,
   bottomContent: Object as PropType<VNodeChild>,
+  itemStartContent: Object as PropType<VNodeChild>,
+  itemEndContent: Object as PropType<VNodeChild>,
 })
 
 const emit = defineEmits<{

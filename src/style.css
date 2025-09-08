@@ -30,3 +30,86 @@
   @apply absolute bg-white/30 rounded-full pointer-events-none;
 }
 
+
+
+/* Image container styles */
+.image-container {
+  position: relative;
+  display: inline-block;
+  margin: 0.5rem 0;
+  max-width: 100%;
+  transition: all 0.2s ease;
+}
+
+.image-container.selected {
+  outline: 2px solid #3b82f6;
+  border-radius: 0.5rem;
+}
+
+/* Resize handle styles */
+.resize-handle {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background-color: #3b82f6;
+  border: 2px solid white;
+  border-radius: 50%;
+  z-index: 10;
+  cursor: nwse-resize;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Position the resize handles */
+.resize-handle.top-left {
+  top: -6px;
+  left: -6px;
+  cursor: nwse-resize;
+}
+
+.resize-handle.top-right {
+  top: -6px;
+  right: -6px;
+  cursor: nesw-resize;
+}
+
+.resize-handle.bottom-left {
+  bottom: -6px;
+  left: -6px;
+  cursor: nesw-resize;
+}
+
+.resize-handle.bottom-right {
+  bottom: -6px;
+  right: -6px;
+  cursor: nwse-resize;
+}
+
+/* Image styles */
+.image-container img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+  display: block;
+  user-select: none;
+  -webkit-user-drag: none;
+  -khtml-user-drag: none;
+  -moz-user-drag: none;
+  -o-user-drag: none;
+}
+
+/* Hide resize handles when not selected */
+.image-container:not(.selected) .resize-handle {
+  display: none;
+}
+
+/* Cursor styles for resizing */
+.resize-handle.top-left,
+.resize-handle.bottom-right {
+  cursor: nwse-resize;
+}
+
+.resize-handle.top-right,
+.resize-handle.bottom-left {
+  cursor: nesw-resize;
+}
+
