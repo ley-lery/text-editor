@@ -129,6 +129,7 @@ export function useEditorTable(editor: HTMLElement | null | any, updateContent: 
             width: 100%; 
             margin: 10px 0;
             border: 1px solid #dee2e6;
+            table-layout: fixed;
         ">`
         
         for (let r = 0; r < selectedRows.value; r++) {
@@ -143,10 +144,12 @@ export function useEditorTable(editor: HTMLElement | null | any, updateContent: 
                         border: 1px solid #dee2e6;
                         padding: 8px;
                         min-height: 24px;
-                        min-width: 80px;
+                        width: ${100 / selectedCols.value}%;
                         vertical-align: top;
                         background: transparent;
                         text-align: left;
+                        word-wrap: break-word;
+                        overflow-wrap: break-word;
                     "
                 >&nbsp;</td>`
             }

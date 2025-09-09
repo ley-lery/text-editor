@@ -8,9 +8,9 @@ export function useEditorStoreFactory(editorId: string) {
   return defineStore(`editor-${editorId}`, () => {
     // --- State ---
     const fontSize = ref(15)
-    const textColor = ref('')
+    const textColor = ref('#000000')
     const backgroundColor = ref('#000')
-    const backgroundTextColor = ref('') 
+    const backgroundTextColor = ref('#ffff00') 
     const fontWeight = ref<FontWeight>('normal')
     const fontFamily = ref<FontFamily>('Arial')
     const fontStyle = ref<FontStyle>('normal')
@@ -83,99 +83,14 @@ export function useEditorStoreFactory(editorId: string) {
       }
     })
 
-    // --- Store Configuration ---
-    const storeProperties: Record<string, StoreProperty> = {
-      fontSize: {
-        label: 'Font Size',
-        value: fontSize,
-        type: 'number',
-        min: 8,
-        max: 72,
-        step: 1,
-        unit: 'px'
-      },
-      textColor: { 
-        label: 'Text Color', 
-        value: textColor, 
-        type: 'color' 
-      },
-      backgroundColor: { 
-        label: 'Background Color', 
-        value: backgroundColor, 
-        type: 'color' 
-      },
-      backgroundTextColor: { 
-        label: 'Background Text Color', 
-        value: backgroundTextColor, 
-        type: 'color' 
-      },
-      fontFamily: { 
-        label: 'Font Family', 
-        value: fontFamily, 
-        type: 'select',
-        options: ['Arial', 'Helvetica', 'Times New Roman', 'Courier New', 'Verdana', 'Georgia'] as const
-      },
-      fontWeight: { 
-        label: 'Font Weight', 
-        value: fontWeight, 
-        type: 'select',
-        options: ['normal', 'bold', 'lighter', 'bolder'] as const
-      },
-      fontStyle: { 
-        label: 'Font Style', 
-        value: fontStyle, 
-        type: 'select',
-        options: ['normal', 'italic', 'oblique'] as const
-      },
-      textDecoration: { 
-        label: 'Text Decoration', 
-        value: textDecoration, 
-        type: 'select',
-        options: ['none', 'underline', 'overline', 'line-through'] as const
-      },
-      textAlign: { 
-        label: 'Text Align', 
-        value: textAlign, 
-        type: 'select',
-        options: ['left', 'center', 'right', 'justify'] as const
-      },
-      lineHeight: { 
-        label: 'Line Height', 
-        value: lineHeight, 
-        type: 'select',
-        options: ['normal', 'tight', 'snug', 'relaxed', 'loose'] as const
-      },
-      bulletList: { 
-        label: 'Bullet List', 
-        value: bulletList, 
-        type: 'select',
-        options: ['default', 'disc', 'circle', 'square', 'none'] as const
-      },
-      numberList: { 
-        label: 'Number List', 
-        value: numberList, 
-        type: 'select',
-        options: ['default', 'decimal', 'decimal-leading-zero', 'lower-roman', 'upper-roman'] as const
-      },
-      link: { 
-        label: 'Link', 
-        value: link, 
-        type: 'text' 
-      },
-      capitalize: { 
-        label: 'Text Transform', 
-        value: capitalize, 
-        type: 'select',
-        options: ['none', 'capitalize', 'uppercase', 'lowercase'] as const
-      },
-    }
+ 
 
     // --- Utility Actions ---
     const resetToDefaults = () => {
       fontSize.value = 15
       textColor.value = '#000000'
       backgroundColor.value = '#ffffff'
-      backgroundTextColor.value = '#000000'
+      backgroundTextColor.value = '#ffff00'
       fontWeight.value = 'normal'
       fontFamily.value = 'Arial'
       fontStyle.value = 'normal'
@@ -254,9 +169,6 @@ export function useEditorStoreFactory(editorId: string) {
       history,
       historyIndex,
 
-      // configuration
-      storeProperties,
-      
       // actions
       setFontSize,
       setTextColor,

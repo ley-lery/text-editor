@@ -1,8 +1,6 @@
 <template>
   <div class="relative w-full p-2 rounded-3xl bg-white/90 dark:bg-black/70 overflow-hidden h-full">
-    <!-- Background gradient -->
-    <div class="absolute inset-0 z-0 opacity-15 pointer-events-none" :style="gradientStyle" />
-
+   
     <!-- Editable area -->
     <div
       ref="editor"
@@ -59,13 +57,26 @@
               <component :is="btn.icon" />
             </ButtonIcon>
             <!-- Background Color Picker -->
-            <label title="Background Color">
-              <input type="color" @input="e => applyBackgroundColor((e.target as HTMLInputElement).value)" class="w-6 h-6" />
-            </label>
+            <ColorPicker
+              v-if="isOpen"
+              :model-value="currentSelectionBackgroundColor"
+              @update:model-value="applyBackgroundColor"
+              :show-opacity="true"
+              :show-custom-input="true"
+              :show-clear-button="true"
+              :show-footer="true"
+            />
             <!-- Text Color Picker -->
-            <label title="Text Color">
-              <input type="color" @input="e => applyTextColor((e.target as HTMLInputElement).value)" class="w-6 h-6" />
-            </label>
+            <ColorPicker
+              v-if="isOpen"
+              :model-value="currentSelectionTextColor"
+              @update:model-value="applyTextColor"
+              :show-opacity="true"
+              :show-custom-input="true"
+              :show-clear-button="true"
+              :show-footer="true"
+            />
+          
             <!-- Text Alignment -->
             <div class="flex items-center gap-1">
               <ButtonIcon
@@ -81,10 +92,9 @@
             </div>
             <!-- Line Height Dropdown -->
             <div class="flex items-center space-x-1" title="Line Height">
-              <LineChart class="w-4 h-4 text-zinc-600 dark:text-zinc-400" />
               <select 
                 @change="applyLineHeight($event)"
-                class="px-2 py-1 text-xs bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-600 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-700"
+                class="px-2 py-1 text-xs bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 border-none rounded-lg focus:outline-none hover:bg-zinc-50 dark:hover:bg-zinc-700"
               >
                 <option 
                   v-for="option in lineHeightOptions" 
@@ -382,22 +392,23 @@
 <script setup lang="ts">
 import { cn } from '../../lib/utils'
 import { useEditorStoreFactory } from '../../stores/index'
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { motion, AnimatePresence } from 'motion-v'
-import { AlignCenter, AlignJustify, AlignLeft, AlignRight, AlignVerticalDistributeCenter, AlignVerticalDistributeEnd, AlignVerticalDistributeStart, Bold, Check, Italic, LineChart, Plus, Underline, X } from 'lucide-vue-next'
+import { AlignCenter, AlignJustify, AlignLeft, AlignRight, AlignVerticalDistributeCenter, AlignVerticalDistributeEnd, AlignVerticalDistributeStart, Bold, Check, Italic, Plus, Underline, X } from 'lucide-vue-next'
 import ButtonIcon from '../ui/ButtonIcon.vue'
 import { useEditorCommands } from '../composables/useEditorCommands'
 import { useEditorSelection } from '../composables/useEditorSelection'
 import { useEditorLink } from '../composables/useEditorLink'
 import { useEditorList } from '../composables/useEditorList'
 import { useEditorTable, showTableGrid } from '../composables/useEditorTable'
-import { useEditorImage, uploadImage } from '../composables/useEditorImage'
+import { useEditorImage, createEditorImageUploadTrigger, registerEditorImageUpload, unregisterEditorImageUpload } from '../composables/useEditorImage'
 import { useFormattingButtons, useTextAlignmentButtons, useLineHeightOptions } from '../composables/useSelectionToolbar'
 import { useSelectionTextAlignment, useSelectionLineHeight } from '../composables/useSelectionStyling'
 import { useDocumentStore } from '../../stores/useDocumentStore'
 import Modal from '../ui/Modal.vue'
 import { useDisclosure } from '../../hooks/useDisclosure'
 import TableGrid from './TableGrid.vue'
+import ColorPicker from '../ui/ColorPicker.vue'
 
 const { onClose: onCloseMerge } = useDisclosure()
 
@@ -417,6 +428,13 @@ const toolbarStyle = ref({})
 const editor = ref<HTMLElement | null>(null)
 const content = ref('')
 const editorStore = useEditorStoreFactory(props.editorId)
+
+// Current selection colors
+const currentSelectionTextColor = ref('')
+const currentSelectionBackgroundColor = ref('')
+
+// ===== Editor-specific Image Upload Trigger =====
+const editorImageUpload = createEditorImageUploadTrigger()
 
 // ===== Keyword  =====
 watch(() => editorStore.keyword, (newKeyword, oldKeyword) => {
@@ -471,16 +489,7 @@ const editorClasses = computed(() =>
 
 const toolbarClasses = 'absolute z-10 bg-white dark:bg-black rounded-2xl shadow-lg p-2 max-h-60 w-fit translate-y-2'
 
-const gradientStyle: any = {
-  background: `
-    radial-gradient(ellipse 80% 60% at 5% 40%, rgba(175, 109, 255, 0.48), transparent 67%),
-    radial-gradient(ellipse 70% 60% at 45% 45%, rgba(255, 100, 180, 0.41), transparent 67%),
-    radial-gradient(ellipse 62% 52% at 83% 76%, rgba(255, 235, 170, 0.44), transparent 63%),
-    radial-gradient(ellipse 60% 48% at 75% 20%, rgba(120, 190, 255, 0.36), transparent 66%),
-    linear-gradient(45deg, #f7eaff 0%, #fde2ea 100%)
-  `,
-  pointerEvents: "none"
-}
+
 
 // ===== Motion =====
 const motionInitial = { opacity: 0, scale: 0 }
@@ -498,14 +507,17 @@ const updateContent = () => {
 }
 
 // ===== Composables =====
-const { handleSelection, applyBackgroundColor, applyTextColor } = useEditorSelection(editor, isOpen, toolbarStyle, content)
+const { handleSelection: originalHandleSelection, applyBackgroundColor, applyTextColor } = useEditorSelection(editor, isOpen, toolbarStyle, content, editorStore)
+
+// Enhanced handleSelection that also updates current selection colors
+const handleSelection = () => {
+  originalHandleSelection()
+  
+}
 const { exec, insertKeyword } = useEditorCommands(editor, updateContent)
 const { showLinkInput, linkUrl, toggleLink, applyLink, handleLinkInputKeydown, handleLinkClick, getLink } = useEditorLink(editor, updateContent)
 const { triggerImageUpload } = useEditorImage(editor, updateContent)
-const { 
-  toggleBulletDisc, 
-  isUnorderedList
-} = useEditorList(editor, updateContent, props.editorId)
+const { toggleBulletDisc, isUnorderedList } = useEditorList(editor, updateContent, props.editorId)
 
 // ===== Selection Toolbar Composables =====
 const { applyTextAlignment } = useSelectionTextAlignment(editor, editorStore, content, handleSelection)
@@ -589,11 +601,11 @@ watch(content, (val) => {
   editorStore.updateModelValue(val)
 })
 
-// Watch for image upload trigger from toolbar
-watch(() => uploadImage.openFile.value, (shouldOpen) => {
+// Watch for image upload trigger from toolbar (editor-specific)
+watch(() => editorImageUpload.openFile.value, (shouldOpen) => {
   if (shouldOpen) {
     triggerImageUpload()
-    uploadImage.openFile.value = false // Reset the trigger
+    editorImageUpload.openFile.value = false // Reset the trigger
   }
 })
 
@@ -631,6 +643,14 @@ onMounted(() => {
     editor.value.innerHTML = content.value
     editor.value.focus()
   }
+  
+  // Register the editor-specific image upload trigger
+  registerEditorImageUpload(props.editorId, editorImageUpload)
+})
+
+onUnmounted(() => {
+  // Cleanup the registered trigger
+  unregisterEditorImageUpload(props.editorId)
 })
 </script>
 
@@ -640,16 +660,19 @@ onMounted(() => {
   border-collapse: collapse;
   width: 100%;
   margin: 10px 0;
+  table-layout: fixed;
 }
 
 :deep(table td) {
   border: 1px solid #cbcfd4;
   padding: 8px;
-  min-width: 100px;
   min-height: 30px;
   vertical-align: top;
   position: relative;
   background-color: #00000010;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
 }
 .dark :deep(table td) {
   border-color: #ffffff;

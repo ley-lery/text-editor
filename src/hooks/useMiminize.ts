@@ -1,6 +1,6 @@
 import { ref } from "vue"
 
-const minimize = ref(false)
+const minimize = ref<boolean>(true)
 
 const useMiminize = () => {
     const toggleMinimize = () => {

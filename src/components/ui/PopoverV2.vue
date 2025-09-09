@@ -12,64 +12,54 @@
 
     <AnimatePresence :initial="false">
       <!-- Backdrop overlay -->
-      <div
+      <!-- <div
         v-if="isOpen"
         @click="closePopover"
-        class="fixed inset-0 z-[998] bg-black/10 dark:bg-black/20"
-      />
+        class="fixed inset-0 z-[998] bg-black/10 dark:bg-black/20 w-screen h-screen top-0 left-0"
+      /> -->
 
       <!-- Popover content -->
       <motion.div
         v-if="isOpen"
-        class="absolute z-[999] mt-2 bg-white/95 dark:bg-gray-800/95 backdrop-blur-lg rounded-xl shadow-xl border border-gray-200/50 dark:border-gray-700/50 overflow-hidden"
-        :class="[
-          positionClasses,
-          {
-            'min-w-[200px]': !customWidth,
-            'max-h-80 overflow-y-auto': !noMaxHeight
-          }
-        ]"
+        :initial="{ opacity: 0, height: 0 }"
+        :animate="{ opacity: 1, height: 350 }"
+        :exit="{ opacity: 0, height: 0 }"
+        :transition="{  type: 'spring', damping: 15, stiffness: 100 }"
+        class="absolute z-[999] mt-2 shadow-sm shadow-zinc-200/50 dark:shadow-none border border-white dark:border-zinc-600 bg-white/50 dark:bg-zinc-300/10 rounded-3xl overflow-hidden p-4"
+        :class="[ positionClasses ]"
         :style="customWidth ? { width: customWidth } : {}"
-        :initial="{ 
-          opacity: 0, 
-          scale: 0.95, 
-          translateY: placement === 'top' ? 10 : -10 
-        }"
-        :animate="{ 
-          opacity: 1, 
-          scale: 1, 
-          translateY: 0 
-        }"
-        :exit="{ 
-          opacity: 0, 
-          scale: 0.95, 
-          translateY: placement === 'top' ? 10 : -10 
-        }"
-        :transition="{ 
-          type: 'spring', 
-          duration: 0.2, 
-          bounce: 0.1 
-        }"
+       
       >
-        <!-- Header slot -->
-        <div v-if="$slots.header" class="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-          <slot name="header" />
-        </div>
-
-        <!-- Main content -->
-        <div class="p-4">
-          <slot name="content">
-            <!-- Default content when no content slot is provided -->
-            <div class="text-sm text-gray-600 dark:text-gray-400">
-              Popover content goes here
+        <div
+            :class="[
+                'pr-4',
+                {
+                    'min-w-[200px]': !customWidth,
+                    'max-h-80 overflow-y-auto': !noMaxHeight
+                }
+            ]"
+        >
+            <!-- Header slot -->
+            <div v-if="$slots.header" class="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+            <slot name="header" />
             </div>
-          </slot>
-        </div>
 
-        <!-- Footer slot -->
-        <div v-if="$slots.footer" class="px-4 py-3 bg-gray-50 dark:bg-gray-750 border-t border-gray-200 dark:border-gray-700">
-          <slot name="footer" />
-        </div>
+            <!-- Main content -->
+            <div class="p-4">
+            <slot name="content">
+                <!-- Default content when no content slot is provided -->
+                <div class="text-sm text-gray-600 dark:text-gray-400">
+                Popover content goes here
+                </div>
+            </slot>
+            </div>
+
+            <!-- Footer slot -->
+            <div v-if="$slots.footer">
+                <slot name="footer" />
+            </div>
+      </div>
+
       </motion.div>
     </AnimatePresence>
   </div>

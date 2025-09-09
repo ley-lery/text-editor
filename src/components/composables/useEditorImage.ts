@@ -1,6 +1,9 @@
 import type { Ref } from 'vue'
 import { ref, onUnmounted } from 'vue'
 
+// Global registry to map editorId to image upload triggers
+const editorImageUploadRegistry = new Map<string, { openFile: Ref<boolean> }>()
+
 export function useEditorImage(editor: Ref<HTMLElement | null>, updateContent: () => void) {
   const showImageInput = ref(false)
   const imageUrl = ref('')
@@ -307,7 +310,22 @@ export function useEditorImage(editor: Ref<HTMLElement | null>, updateContent: (
   }
 }
 
-// Export the global function
-export const uploadImage = {
+// Export a factory function for creating editor-specific image upload triggers
+export const createEditorImageUploadTrigger = () => ({
   openFile: ref(false),
+})
+
+// Register an editor's image upload trigger
+export const registerEditorImageUpload = (editorId: string, trigger: { openFile: Ref<boolean> }) => {
+  editorImageUploadRegistry.set(editorId, trigger)
+}
+
+// Get an editor's image upload trigger
+export const getEditorImageUpload = (editorId: string) => {
+  return editorImageUploadRegistry.get(editorId)
+}
+
+// Unregister an editor's image upload trigger
+export const unregisterEditorImageUpload = (editorId: string) => {
+  editorImageUploadRegistry.delete(editorId)
 }

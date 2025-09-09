@@ -29,16 +29,24 @@
         >
           <FontSize :editorId="props.editorId" />
           <FontFamily :editorId="props.editorId" />
-          <LineHeight :editorId="props.editorId" />
           <Keyword :editorId="props.editorId" />
           <!-- <ColorPicker :editorId="props.editorId" /> -->
           <Popover :options="capitalizeActions">
-            <button
+            <ButtonIcon
               :class="capitalizeActions.find(action => action.value === editorStore.capitalize)?.value"
               class="px-2 py-1 rounded cursor-pointer text-zinc-600 dark:text-zinc-300 dark:hover:text-zinc-200 font-medium text-base focus:outline-none"
             >
               Aa
-            </button>
+            </ButtonIcon>
+          </Popover>
+          <Popover :options="lineHeightActions">
+            <ButtonIcon
+              class="px-2 py-1 rounded cursor-pointer text-zinc-600 dark:text-zinc-300 dark:hover:text-zinc-200 font-medium text-sm focus:outline-none flex items-center gap-1"
+                :title="lineHeightActions.find(action => action.value === editorStore.lineHeight)?.label || 'Line Height'"
+                :is-active="editorStore.lineHeight !== 'normal'"
+            >
+              <LucideListChevronsDownUp :size="16" />
+            </ButtonIcon>
           </Popover>
         </div>
 
@@ -84,7 +92,7 @@
             </svg>
           </ButtonIcon>
 
-          <ButtonIcon @click="uploadImage.openFile.value = true">
+          <ButtonIcon @click="triggerImageUpload">
               <Image /> 
             </ButtonIcon>
         </div>
@@ -132,17 +140,16 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import ButtonIcon from '../ui/ButtonIcon.vue'
-import { Bold, Italic, Underline, Strikethrough, Undo, Redo, AlignCenter, AlignLeft, AlignRight, AlignJustify,  Image, ChevronDown, Expand, Minimize, List, ListOrdered } from 'lucide-vue-next'
+import { Bold, Italic, Underline, Strikethrough, Undo, Redo, AlignCenter, AlignLeft, AlignRight, AlignJustify,  Image, ChevronDown, Expand, Minimize, List, ListOrdered, LucideListChevronsDownUp } from 'lucide-vue-next'
 import { useEditorStoreFactory } from '../../stores/index'
 import FontSize from '../ui/FontSize.vue'
 import FontFamily from '../ui/FontFamily.vue'
-import LineHeight from '../ui/LineHeight.vue'
 import ThemeSwitcher from '../themes/ThemeSwitcher.vue'
 import Popover from '../ui/Popover.vue'
 import Keyword from '../ui/Keyword.vue'
 import { useEditorList } from '../composables/useEditorList'
 import { showTableGrid } from '../composables/useEditorTable'
-import { uploadImage } from '../composables/useEditorImage'
+import { getEditorImageUpload } from '../composables/useEditorImage'
 import { AnimatePresence, motion } from 'motion-v'
 import { useMiminize } from '../../hooks/useMiminize'
 
@@ -155,10 +162,20 @@ const editorStore = useEditorStoreFactory(props.editorId)
 type FontWeight = 'thin' | 'light' | 'normal' | 'medium' | 'bold' | 'extrabold' | 'black'
 type FontStyle = 'normal' | 'italic'
 type TextDecoration = 'none' | 'underline' | 'line-through'
-type LineHeight = 'normal' | 'tight' | 'snug' | 'relaxed' | 'loose'
 
 // Use list composable
 const { bulletListOptions, numberedListOptions } = useEditorList(null, () => {}, props.editorId)
+
+// Get editor-specific image upload trigger
+const editorImageUpload = computed(() => getEditorImageUpload(props.editorId))
+
+// Function to trigger image upload for this editor
+const triggerImageUpload = () => {
+  const uploadTrigger = editorImageUpload.value
+  if (uploadTrigger) {
+    uploadTrigger.openFile.value = true
+  }
+}
 
 // Menu state with smooth toggle
 const isMenusOpen = ref<boolean>(false)
@@ -246,6 +263,39 @@ const capitalizeActions = computed(() => [
     icon: 'aa',
     value: 'lowercase',
     onClick: () => editorStore.setCapitalize('lowercase')
+  },
+])
+
+const lineHeightActions = computed(() => [
+  { 
+    label: 'Normal',
+    shortLabel: 'Normal',
+    value: 'normal', 
+    onClick: () => editorStore.setLineHeight('normal')
+  },
+  { 
+    label: 'Tight (1.25)', 
+    shortLabel: 'Tight',
+    value: 'tight',
+    onClick: () => editorStore.setLineHeight('tight')
+  },
+  { 
+    label: 'Snug (1.375)', 
+    shortLabel: 'Snug',
+    value: 'snug',
+    onClick: () => editorStore.setLineHeight('snug')
+  },
+  { 
+    label: 'Relaxed (1.625)', 
+    shortLabel: 'Relaxed',
+    value: 'relaxed',
+    onClick: () => editorStore.setLineHeight('relaxed')
+  },
+  { 
+    label: 'Loose (2)', 
+    shortLabel: 'Loose',
+    value: 'loose',
+    onClick: () => editorStore.setLineHeight('loose')
   },
 ])
 

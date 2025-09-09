@@ -2,15 +2,55 @@
   <div class="space-y-4">
     <!-- Color Palette Grid -->
     <div class="space-y-3">
+      <!-- Clear/Transparent option -->
+      <div class="flex justify-center mb-3">
+        <div class="relative group">
+          <div 
+            class="w-8 h-8 rounded-full cursor-pointer border-none relative overflow-hidden outline-none flex items-center justify-center"
+            :class="getColorClasses('transparent')"
+            @click="selectColor('')"
+            title="Clear color"
+          >
+            <!-- Transparent pattern background -->
+            <div 
+              class="w-6 h-6 rounded-full"
+              style="background-image: 
+                linear-gradient(45deg, #ccc 25%, transparent 25%), 
+                linear-gradient(-45deg, #ccc 25%, transparent 25%), 
+                linear-gradient(45deg, transparent 75%, #ccc 75%), 
+                linear-gradient(-45deg, transparent 75%, #ccc 75%);
+                background-size: 4px 4px;
+                background-position: 0 0, 0 2px, 2px -2px, -2px 0px;"
+            />
+            <!-- Clear icon -->
+            <svg class="absolute w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+            </svg>
+            <!-- Selection indicator -->
+            <div 
+              v-if="selectedColor === '' || selectedColor === 'transparent'"
+              class="absolute inset-0 flex items-center justify-center"
+            >
+              <div class="w-2 h-2 bg-blue-500 rounded-full shadow-md border border-white" />
+            </div>
+            
+            <!-- Hover tooltip -->
+            <div class="absolute -top-8 left-1/2 transform -translate-x-1/2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+              Clear Color
+            </div>
+          </div>
+        </div>
+      </div>
+      
       <!-- Grayscale Colors -->
-      <div class="flex flex-wrap gap-2 justify-center">
+      <div class="grid grid-cols-5 gap-2 justify-center">
         <div 
           v-for="color in grayscaleColors" 
           :key="color"
           class="relative group"
         >
           <div 
-            class="w-8 h-8 rounded-lg cursor-pointer border-2 transition-all duration-200 hover:scale-110 hover:shadow-md relative overflow-hidden"
+            class="w-8 h-8 rounded-full cursor-pointer  relative overflow-hidden outline-none"
             :class="getColorClasses(color)"
             :style="{ backgroundColor: color }"
             @click="selectColor(color)"
@@ -21,26 +61,21 @@
               v-if="selectedColor === color"
               class="absolute inset-0 flex items-center justify-center"
             >
-              <div class="w-2 h-2 bg-white rounded-full shadow-md border border-gray-300" />
-            </div>
-            
-            <!-- Hover tooltip -->
-            <div class="absolute -top-8 left-1/2 transform -translate-x-1/2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
-              {{ color }}
+              <div class="w-4 h-4 bg-black rounded-full shadow-md " />
             </div>
           </div>
         </div>
       </div>
       
       <!-- Bright Colors -->
-      <div class="flex flex-wrap gap-2 justify-center">
+      <div class="grid grid-cols-5 gap-2 justify-center">
         <div 
           v-for="color in brightColors" 
           :key="color"
           class="relative group"
         >
           <div 
-            class="w-8 h-8 rounded-lg cursor-pointer border-2 transition-all duration-200 hover:scale-110 hover:shadow-md relative overflow-hidden"
+            class="w-8 h-8 rounded-full cursor-pointer  relative overflow-hidden outline-none"
             :class="getColorClasses(color)"
             :style="{ backgroundColor: color }"
             @click="selectColor(color)"
@@ -63,44 +98,14 @@
       </div>
       
       <!-- Pastel Colors -->
-      <div class="flex flex-wrap gap-2 justify-center">
+      <div class="grid grid-cols-5 gap-2 justify-center">
         <div 
           v-for="color in pastelColors" 
           :key="color"
           class="relative group"
         >
           <div 
-            class="w-8 h-8 rounded-lg cursor-pointer border-2 transition-all duration-200 hover:scale-110 hover:shadow-md relative overflow-hidden"
-            :class="getColorClasses(color)"
-            :style="{ backgroundColor: color }"
-            @click="selectColor(color)"
-            :title="color"
-          >
-            <!-- Selection indicator -->
-            <div 
-              v-if="selectedColor === color"
-              class="absolute inset-0 flex items-center justify-center"
-            >
-              <div class="w-2 h-2 bg-white rounded-full shadow-md border border-gray-300" />
-            </div>
-            
-            <!-- Hover tooltip -->
-            <div class="absolute -top-8 left-1/2 transform -translate-x-1/2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
-              {{ color }}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Additional Colors -->
-      <div class="flex flex-wrap gap-2 justify-center">
-        <div 
-          v-for="color in additionalColors" 
-          :key="color"
-          class="relative group"
-        >
-          <div 
-            class="w-8 h-8 rounded-lg cursor-pointer border-2 transition-all duration-200 hover:scale-110 hover:shadow-md relative overflow-hidden"
+            class="w-8 h-8 rounded-full cursor-pointer  relative overflow-hidden outline-none"
             :class="getColorClasses(color)"
             :style="{ backgroundColor: color }"
             @click="selectColor(color)"
@@ -133,7 +138,7 @@
           type="color"
           v-model="customColor"
           @input="handleCustomColorChange"
-          class="w-12 h-8 rounded border border-gray-300 dark:border-gray-600 cursor-pointer"
+          class="min-w-8 h-8 rounded border border-gray-300 dark:border-gray-600 cursor-pointer"
         />
         <input 
           type="text"
@@ -141,11 +146,11 @@
           @input="handleCustomTextChange"
           @keydown.enter="applyCustomColor"
           placeholder="#000000"
-          class="flex-1 px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+          class="w-full px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
         />
         <button 
           @click="applyCustomColor"
-          class="px-3 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+          class=" px-3 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
         >
           Apply
         </button>
@@ -245,7 +250,6 @@ const grayscaleColors = [
   '#6B7280', // gray-500
   '#374151', // gray-700
   '#1F2937', // gray-800
-  '#000000'  // black
 ]
 
 const brightColors = [
@@ -256,7 +260,6 @@ const brightColors = [
   '#06B6D4', // cyan-500
   '#3B82F6', // blue-500
   '#8B5CF6', // violet-500
-  '#EC4899'  // pink-500
 ]
 
 const pastelColors = [
@@ -267,21 +270,17 @@ const pastelColors = [
   '#CFFAFE', // cyan-100
   '#DBEAFE', // blue-100
   '#E9D5FF', // violet-100
-  '#FCE7F3'  // pink-100
-]
-
-const additionalColors = [
-  '#DC2626', // red-600
-  '#EA580C', // orange-600
-  '#CA8A04', // yellow-600
-  '#16A34A', // green-600
-  '#0891B2', // cyan-600
-  '#2563EB', // blue-600
-  '#7C3AED', // violet-600
-  '#DB2777'  // pink-600
 ]
 
 const getColorClasses = (color: string) => {
+  // Handle transparent/clear color case
+  if (color === 'transparent') {
+    const isSelected = selectedColor.value === '' || selectedColor.value === 'transparent'
+    return isSelected 
+      ? 'border-blue-500 ring-2 ring-blue-500 ring-offset-1 dark:ring-offset-gray-800' 
+      : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
+  }
+  
   const isSelected = selectedColor.value === color
   const baseClasses = isSelected 
     ? 'border-blue-500 ring-2 ring-blue-500 ring-offset-1 dark:ring-offset-gray-800' 

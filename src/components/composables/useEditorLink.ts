@@ -38,18 +38,45 @@ export function useEditorLink(editor: any, updateContent: () => void) {
       if (savedRange.value && selection) {
         selection.removeAllRanges()
         selection.addRange(savedRange.value)
-      }
 
-      document.execCommand('createLink', false, url)
+        // Get the selected text content
+        const selectedText = savedRange.value.toString()
+        
+        // Create the link element manually to avoid extra br tags
+        const linkElement = document.createElement('a')
+        linkElement.href = url
+        linkElement.textContent = selectedText || 'Link'
+        linkElement.style.color = '#2563eb'
+        linkElement.style.textDecoration = 'underline'
+        linkElement.style.cursor = 'pointer'
+        linkElement.setAttribute('target', '_blank')
+        linkElement.setAttribute('rel', 'noopener noreferrer')
 
-      const anchors = editor.value?.getElementsByTagName('a')
-      if (anchors && anchors.length > 0) {
-        const linkEl = anchors[anchors.length - 1]
-        linkEl.style.color = '#2563eb'
-        linkEl.style.textDecoration = 'underline'
-        linkEl.style.cursor = 'pointer'
-        linkEl.setAttribute('target', '_blank')
-        linkEl.setAttribute('rel', 'noopener noreferrer')
+        // Replace the selection with the link element
+        try {
+          savedRange.value.deleteContents()
+          savedRange.value.insertNode(linkElement)
+          
+          // Clear selection and position cursor after the link
+          selection.removeAllRanges()
+          const newRange = document.createRange()
+          newRange.setStartAfter(linkElement)
+          newRange.collapse(true)
+          selection.addRange(newRange)
+        } catch (error) {
+          // Fallback to execCommand if manual insertion fails
+          document.execCommand('createLink', false, url)
+          
+          const anchors = editor.value?.getElementsByTagName('a')
+          if (anchors && anchors.length > 0) {
+            const linkEl = anchors[anchors.length - 1]
+            linkEl.style.color = '#2563eb'
+            linkEl.style.textDecoration = 'underline'
+            linkEl.style.cursor = 'pointer'
+            linkEl.setAttribute('target', '_blank')
+            linkEl.setAttribute('rel', 'noopener noreferrer')
+          }
+        }
       }
 
       updateContent()
@@ -63,7 +90,7 @@ export function useEditorLink(editor: any, updateContent: () => void) {
       selection.removeAllRanges()
       selection.addRange(savedRange.value)
     }
-    document.execCommand('unlink') // built-in unlink command
+    document.execCommand('unlink') 
     updateContent()
   }
 

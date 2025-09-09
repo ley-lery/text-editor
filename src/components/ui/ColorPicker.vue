@@ -10,17 +10,17 @@
   >
     <template #trigger>
       <div 
-        class="w-8 h-8 rounded-lg cursor-pointer border-2 border-gray-300 dark:border-gray-600 flex items-center justify-center transition-all duration-200 hover:scale-105 hover:shadow-md group"
+        class="w-6 h-6 cursor-pointer  flex items-center justify-center group rounded-2xl"
         :class="{ 
-          'ring-2 ring-blue-500 ring-offset-2 dark:ring-offset-gray-800': isOpen,
-          'border-gray-200 dark:border-gray-700': !modelValue 
+          
+          'border-gray-200 dark:border-gray-700': !modelValue || modelValue === ''
         }"
-        :style="{ backgroundColor: modelValue || 'transparent' }"
+        :style="{ backgroundColor: (modelValue && modelValue !== '') ? modelValue : 'transparent' }"
       >
         <!-- Color display or default pattern -->
         <div 
-          v-if="!modelValue" 
-          class="w-5 h-5 bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600 rounded group-hover:from-gray-300 group-hover:to-gray-400 dark:group-hover:from-gray-600 dark:group-hover:to-gray-500 transition-all duration-200"
+          v-if="!modelValue || modelValue === ''" 
+          class="w-6 h-6 bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600 group-hover:from-gray-300 group-hover:to-gray-400 dark:group-hover:from-gray-600 dark:group-hover:to-gray-500 transition-all duration-200 rounded-2xl"
           style="background-image: 
             linear-gradient(45deg, transparent 25%, rgba(0,0,0,0.1) 25%, rgba(0,0,0,0.1) 75%, transparent 75%),
             linear-gradient(45deg, transparent 25%, rgba(0,0,0,0.1) 25%, rgba(0,0,0,0.1) 75%, transparent 75%);
@@ -30,27 +30,27 @@
         
         <!-- Selected color indicator -->
         <div 
-          v-if="modelValue && isOpen"
+          v-if="modelValue && modelValue !== '' && isOpen"
           class="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full border-2 border-white dark:border-gray-800"
         />
+        
+        <!-- Clear button when color is selected -->
+        <!-- <button
+          v-if="showClearButton && modelValue && modelValue !== ''"
+          @click.stop="clearColor"
+          class="absolute -top-1 -left-1 w-4 h-4 bg-red-500 hover:bg-red-600 rounded-full border-2 border-white dark:border-gray-800 flex items-center justify-center transition-colors"
+          title="Clear color"
+        >
+          <svg class="w-2 h-2 text-white" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+          </svg>
+        </button> -->
       </div>
     </template>
 
     <template #header>
       <div class="flex items-center justify-between">
         <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200">Color Picker</h3>
-        <div class="flex items-center gap-2">
-          <span class="text-xs text-gray-500 dark:text-gray-400">
-            {{ modelValue || 'No color' }}
-          </span>
-          <button 
-            v-if="modelValue && showClearButton"
-            @click="clearColor"
-            class="text-xs text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300 transition-colors"
-          >
-            Clear
-          </button>
-        </div>
       </div>
     </template>
 
@@ -65,17 +65,18 @@
     </template>
 
     <template #footer v-if="showFooter">
-      <div class="flex items-center justify-between">
+      <div class="flex items-center justify-between bg-white/10 p-2 rounded-2xl">
         <div class="flex items-center gap-2">
           <div 
             class="w-6 h-6 rounded border border-gray-300 dark:border-gray-600"
-            :style="{ backgroundColor: modelValue || 'transparent' }"
+            :style="{ backgroundColor: (modelValue && modelValue !== '') ? modelValue : 'transparent' }"
           />
           <span class="text-xs font-mono text-gray-600 dark:text-gray-400">
-            {{ modelValue || 'transparent' }}
+            {{ (modelValue && modelValue !== '') ? modelValue : 'transparent' }}
           </span>
         </div>
         <div class="flex gap-2">
+          
           <button 
             @click="handleCancel"
             class="px-3 py-1 text-xs text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
