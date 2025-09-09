@@ -1,155 +1,174 @@
 <template>
-  <div class="relative inline-block">
-    <!-- Trigger Button -->
-    <button
-      :class="['cursor-pointer flex flex-col items-center rounded-full focus:outline-none transition', buttonClass, disabled && 'opacity-50 pointer-events-none']"
-      @click="togglePicker"
-      :disabled="disabled"
-      aria-label="Pick a color"
-      type="button"
-    >
-        <span class="text-zinc-700 dark:text-zinc-300">A</span>
-        <span
-            class="w-5 h-1 rounded-full border border-zinc-300"
-            :style="{background: color || '#fff'}"
+  <PopoverV2 
+    :placement="placement"
+    :trigger="trigger"
+    :selected-color="modelValue"
+    custom-width="280px"
+    v-model="isOpen"
+    @open="handleOpen"
+    @close="handleClose"
+  >
+    <template #trigger>
+      <div 
+        class="w-8 h-8 rounded-lg cursor-pointer border-2 border-gray-300 dark:border-gray-600 flex items-center justify-center transition-all duration-200 hover:scale-105 hover:shadow-md group"
+        :class="{ 
+          'ring-2 ring-blue-500 ring-offset-2 dark:ring-offset-gray-800': isOpen,
+          'border-gray-200 dark:border-gray-700': !modelValue 
+        }"
+        :style="{ backgroundColor: modelValue || 'transparent' }"
+      >
+        <!-- Color display or default pattern -->
+        <div 
+          v-if="!modelValue" 
+          class="w-5 h-5 bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600 rounded group-hover:from-gray-300 group-hover:to-gray-400 dark:group-hover:from-gray-600 dark:group-hover:to-gray-500 transition-all duration-200"
+          style="background-image: 
+            linear-gradient(45deg, transparent 25%, rgba(0,0,0,0.1) 25%, rgba(0,0,0,0.1) 75%, transparent 75%),
+            linear-gradient(45deg, transparent 25%, rgba(0,0,0,0.1) 25%, rgba(0,0,0,0.1) 75%, transparent 75%);
+            background-size: 4px 4px;
+            background-position: 0 0, 2px 2px;"
         />
-    </button>
+        
+        <!-- Selected color indicator -->
+        <div 
+          v-if="modelValue && isOpen"
+          class="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full border-2 border-white dark:border-gray-800"
+        />
+      </div>
+    </template>
 
-    <!-- Popover -->
-    <motion.div
-      v-if="isOpen"
-      class="color-picker-popover z-30 absolute"
-      :class="[
-        popoverClass,
-        placement === 'top' && 'bottom-full left-1/2 -translate-x-1/2 mb-2',
-        placement === 'bottom' && 'top-full left-1/2 -translate-x-1/2 mt-2',
-        placement === 'left' && 'right-full top-1/2 -translate-y-1/2 mr-2',
-        placement === 'right' && 'left-full top-1/2 -translate-y-1/2 ml-2',
-        // fallback
-        !placement && 'top-full left-1/2 -translate-x-1/2 mt-2'
-      ]"
-      :initial="{ opacity: 0, scale: 0.9 }"
-      :animate="{ opacity: 1, scale: 1 }"
-      :exit="{ opacity: 0, scale: 0.9 }"
-      :transition="{ duration: 0.18, ease: 'easeInOut' }"
-    >
-      <div class="rounded-xl bg-white dark:bg-zinc-900 shadow-lg p-4 min-w-[220px]">
-        <!-- Swatches -->
-        <div class="grid grid-cols-6 gap-2 mb-2">
-          <button
-            v-for="swatch in swatches"
-            :key="swatch"
-            class="w-7 h-7 rounded-full border-2 border-zinc-200 hover:border-zinc-400 transition cursor-pointer"
-            :style="{ background: swatch }"
-            @click="selectColor(swatch)"
-            :aria-label="swatch"
-            type="button"
+    <template #header>
+      <div class="flex items-center justify-between">
+        <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200">Color Picker</h3>
+        <div class="flex items-center gap-2">
+          <span class="text-xs text-gray-500 dark:text-gray-400">
+            {{ modelValue || 'No color' }}
+          </span>
+          <button 
+            v-if="modelValue && showClearButton"
+            @click="clearColor"
+            class="text-xs text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300 transition-colors"
           >
-            <span
-              v-if="color === swatch"
-              class="block w-full h-full rounded-full ring-2 ring-blue-500 ring-offset-2"
-            />
+            Clear
           </button>
         </div>
-        <!-- Input -->
-        <div v-if="showInput" class="flex items-center gap-2 mt-2">
-          <input
-            class="w-full rounded-lg border border-zinc-300 px-2 py-1 text-sm focus:ring-2 focus:ring-blue-400 outline-none bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200"
-            type="text"
-            :value="color"
-            @input="onInputChange"
-            placeholder="#hex or color"
-            maxlength="16"
-            aria-label="Custom color"
+      </div>
+    </template>
+
+    <template #content>
+      <Colors
+        :model-value="modelValue"
+        :show-opacity="showOpacity"
+        :show-custom-input="showCustomInput"
+        @update:model-value="handleColorChange"
+        @change="handleColorChange"
+      />
+    </template>
+
+    <template #footer v-if="showFooter">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <div 
+            class="w-6 h-6 rounded border border-gray-300 dark:border-gray-600"
+            :style="{ backgroundColor: modelValue || 'transparent' }"
           />
-          <span
-            v-if="color"
-            class="w-6 h-6 rounded border border-zinc-300"
-            :style="{background: color}"
-          />
+          <span class="text-xs font-mono text-gray-600 dark:text-gray-400">
+            {{ modelValue || 'transparent' }}
+          </span>
+        </div>
+        <div class="flex gap-2">
+          <button 
+            @click="handleCancel"
+            class="px-3 py-1 text-xs text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
+          >
+            Cancel
+          </button>
+          <button 
+            @click="handleApply"
+            class="px-3 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+          >
+            Apply
+          </button>
         </div>
       </div>
-    </motion.div>
-  </div>
+    </template>
+  </PopoverV2>
 </template>
-<script lang="ts" setup>
-import { ref, computed, watch, defineProps, defineEmits, nextTick } from 'vue'
-import { motion } from 'motion-v'
-import { useEditorStoreFactory } from '../../stores/index'
 
-// Props
-const props = defineProps<{
+<script setup lang="ts">
+import { ref, watch } from 'vue'
+import Colors from './Colors.vue'
+import PopoverV2 from './PopoverV2.vue'
+
+interface Props {
   modelValue?: string
-  swatches?: string[]
-  showInput?: boolean
-  open?: boolean
-  placement?: 'top' | 'bottom' | 'left' | 'right'
-  buttonClass?: string
-  popoverClass?: string
+  placement?: 'top' | 'bottom' | 'left' | 'right' | 'top-start' | 'top-end' | 'bottom-start' | 'bottom-end' | 'left-start' | 'left-end' | 'right-start' | 'right-end'
+  trigger?: 'click' | 'hover'
+  showOpacity?: boolean
+  showCustomInput?: boolean
+  showClearButton?: boolean
+  showFooter?: boolean
   disabled?: boolean
-  editorId: string
-}>()
+}
 
-// Emits
+const props = withDefaults(defineProps<Props>(), {
+  placement: 'bottom-start',
+  trigger: 'click',
+  showOpacity: true,
+  showCustomInput: true,
+  showClearButton: true,
+  showFooter: false,
+  disabled: false
+})
+
 const emit = defineEmits<{
   (e: 'update:modelValue', value: string): void
-  (e: 'select', value: string): void
+  (e: 'change', value: string): void
   (e: 'open'): void
   (e: 'close'): void
+  (e: 'apply', value: string): void
+  (e: 'cancel'): void
 }>()
 
-const isOpen = ref(props.open ?? false)
-const color = computed({
-  get: () => useEditorStoreFactory(props.editorId).textColor,
-  set: (v) => {
-    useEditorStoreFactory(props.editorId).textColor = v
-    emit('update:modelValue', v)
-  }
-})
+const isOpen = ref(false)
+const previousColor = ref(props.modelValue)
 
-const swatches = computed(() => props.swatches ?? [
-  '#ef4444', '#f59e42', '#fde68a', '#22d3ee', '#34d399', '#4f46e5', '#a78bfa', '#f472b6', '#6b7280', '#000000', '#ffffff'
-])
-
-// Toggle open/close
-function togglePicker() {
-  if (props.disabled) return
-  isOpen.value = !isOpen.value
-  nextTick(() => {
-    isOpen.value ? emit('open') : emit('close')
-  })
+const handleColorChange = (color: string) => {
+  emit('update:modelValue', color)
+  emit('change', color)
 }
 
-// Handle swatch click
-function selectColor(val: string) {
-  color.value = val
-  emit('select', val)
-  isOpen.value = false
+const clearColor = () => {
+  emit('update:modelValue', '')
+  emit('change', '')
+}
+
+const handleOpen = () => {
+  previousColor.value = props.modelValue
+  emit('open')
+}
+
+const handleClose = () => {
   emit('close')
-  console.log(val, 'val')
 }
 
-// Handle input change
-function onInputChange(e: Event) {
-  const val = (e.target as HTMLInputElement).value
-  color.value = val
+const handleApply = () => {
+  emit('apply', props.modelValue || '')
+  isOpen.value = false
 }
 
-// Close popover on outside click
-function handleClickOutside(e: MouseEvent) {
-  if (!(e.target as HTMLElement).closest('.color-picker-popover, .color-picker-btn')) {
-    isOpen.value = false
-    emit('close')
-    window.removeEventListener('mousedown', handleClickOutside)
+const handleCancel = () => {
+  if (previousColor.value !== props.modelValue) {
+    emit('update:modelValue', previousColor.value || '')
   }
+  emit('cancel')
+  isOpen.value = false
 }
-watch(isOpen, (val) => {
-  if (val) window.addEventListener('mousedown', handleClickOutside)
-  else window.removeEventListener('mousedown', handleClickOutside)
+
+// Watch for external changes
+watch(() => props.modelValue, (newValue) => {
+  if (!isOpen.value) {
+    previousColor.value = newValue
+  }
 })
+
 </script>
-<style scoped>
-.color-picker-popover {
-  min-width: 180px;
-}
-</style>

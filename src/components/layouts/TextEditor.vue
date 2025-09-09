@@ -13,7 +13,7 @@
     </div>
     <div 
       class="  bg-white/50 backdrop-blur-sm  relative z-10 overflow-hidden dark:bg-zinc-800/50"
-      :class="minimize ? 'h-auto rounded-[40px] min-w-7xl max-w-full' : 'h-screen min-w-screen'"
+      :class="minimize ? 'h-[80vh] rounded-[40px] min-w-7xl max-w-full' : 'h-screen min-w-screen'"
     >
       <!-- <FileMenuBar/> -->
       <div class="p-4 pt-4 flex flex-col gap-2 h-full">

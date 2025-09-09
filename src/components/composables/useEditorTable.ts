@@ -7,7 +7,7 @@ export const showTableGrid = {
     }
 }
 
-export function useEditorTable(editor: HTMLElement | null | any, updateContent: () => void) {
+export function useEditorTable(editor: HTMLElement | null | any, updateContent:  () => void) {
     // Table Modal State
     const maxGridSize = 10
     const selectedRows = ref<number>(1)
@@ -20,8 +20,6 @@ export function useEditorTable(editor: HTMLElement | null | any, updateContent: 
     const mergePopoverPosition = ref({ top: 0, left: 0 })
     const stylePopoverPosition = ref({ top: 0, left: 0 })
     const isSelecting = ref(false)
-    
-    
 
     // Cell styling state
     const availableBackgroundColors = [

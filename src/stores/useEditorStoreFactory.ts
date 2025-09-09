@@ -16,6 +16,7 @@ export function useEditorStoreFactory(editorId: string) {
     const fontStyle = ref<FontStyle>('normal')
     const textDecoration = ref<TextDecoration>('none')
     const textAlign = ref<TextAlign>('left')
+    const lineHeight = ref<LineHeight>('normal')
     const bulletList = ref<BulletList>('default')
     const numberList = ref<NumberList>('default')
     const link = ref('')
@@ -36,6 +37,7 @@ export function useEditorStoreFactory(editorId: string) {
     const setFontStyle = (style: FontStyle) => (fontStyle.value = style)
     const setTextDecoration = (decoration: TextDecoration) => (textDecoration.value = decoration)
     const setTextAlign = (align: TextAlign) => (textAlign.value = align)
+    const setLineHeight = (height: LineHeight) => (lineHeight.value = height)
     const setBulletList = (bullet: BulletList) => (bulletList.value = bullet)
     const setNumberList = (number: NumberList) => (numberList.value = number)
     const setLink = (url: string) => (link.value = url)
@@ -137,6 +139,12 @@ export function useEditorStoreFactory(editorId: string) {
         type: 'select',
         options: ['left', 'center', 'right', 'justify'] as const
       },
+      lineHeight: { 
+        label: 'Line Height', 
+        value: lineHeight, 
+        type: 'select',
+        options: ['normal', 'tight', 'snug', 'relaxed', 'loose'] as const
+      },
       bulletList: { 
         label: 'Bullet List', 
         value: bulletList, 
@@ -173,6 +181,7 @@ export function useEditorStoreFactory(editorId: string) {
       fontStyle.value = 'normal'
       textDecoration.value = 'none'
       textAlign.value = 'left'
+      lineHeight.value = 'normal'
       bulletList.value = 'default'
       numberList.value = 'default'
       link.value = ''
@@ -191,6 +200,7 @@ export function useEditorStoreFactory(editorId: string) {
         fontStyle: fontStyle.value,
         textDecoration: textDecoration.value,
         textAlign: textAlign.value,
+        lineHeight: lineHeight.value,
         bulletList: bulletList.value,
         numberList: numberList.value,
         link: link.value,
@@ -209,6 +219,7 @@ export function useEditorStoreFactory(editorId: string) {
       if (state.fontStyle !== undefined) fontStyle.value = state.fontStyle
       if (state.textDecoration !== undefined) textDecoration.value = state.textDecoration
       if (state.textAlign !== undefined) textAlign.value = state.textAlign
+      if (state.lineHeight !== undefined) lineHeight.value = state.lineHeight
       if (state.bulletList !== undefined) bulletList.value = state.bulletList
       if (state.numberList !== undefined) numberList.value = state.numberList
       if (state.link !== undefined) setLink(state.link)
@@ -230,6 +241,7 @@ export function useEditorStoreFactory(editorId: string) {
       fontStyle,
       textDecoration,
       textAlign,
+      lineHeight,
       bulletList,
       numberList,
       link,
@@ -254,6 +266,7 @@ export function useEditorStoreFactory(editorId: string) {
       setFontStyle,
       setTextDecoration,
       setTextAlign,
+      setLineHeight,
       setBulletList,
       setNumberList,
       setLink,

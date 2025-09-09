@@ -29,8 +29,9 @@
         >
           <FontSize :editorId="props.editorId" />
           <FontFamily :editorId="props.editorId" />
+          <LineHeight :editorId="props.editorId" />
           <Keyword :editorId="props.editorId" />
-          <ColorPicker :editorId="props.editorId" />
+          <!-- <ColorPicker :editorId="props.editorId" /> -->
           <Popover :options="capitalizeActions">
             <button
               :class="capitalizeActions.find(action => action.value === editorStore.capitalize)?.value"
@@ -55,14 +56,24 @@
 
         <!-- Bullet List -->
         <div class="flex items-center gap-1">
-          <ButtonIcon
-            v-for="(bullet, index) in bulletList"
-            :key="index"
-            :is-active="bullet.isActive"
-            @click="bullet.onClick"
-          >
-            <component :is="bullet.icon" />
-          </ButtonIcon>
+          <Popover :options="bulletListOptions">
+            <ButtonIcon
+              @click="bulletListOptions.find(action => action.value === editorStore.bulletList)?.onClick"
+            >
+              <List :size="16"/>
+            </ButtonIcon>
+          </Popover>
+        </div>
+
+        <!-- Numbered List -->
+        <div class="flex items-center gap-1">
+          <Popover :options="numberedListOptions">
+            <ButtonIcon
+              @click="numberedListOptions.find(action => action.value === editorStore.numberList)?.onClick"
+            >
+              <ListOrdered :size="16"/>
+            </ButtonIcon>
+          </Popover>
         </div>
 
         <!-- Table and Image Buttons -->
@@ -112,7 +123,6 @@
             <Minimize v-else class="size-7 transition-all duration-300 "/>
           </ButtonIcon>
         </div>
-        
         <ThemeSwitcher />
       </motion.div>
     </AnimatePresence>
@@ -120,16 +130,17 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, ref } from 'vue'
+import { computed, ref } from 'vue'
 import ButtonIcon from '../ui/ButtonIcon.vue'
-import { Bold, Italic, Underline, Strikethrough, Undo, Redo, AlignCenter, AlignLeft, AlignRight, AlignJustify, Disc, Circle, Square, Image, CaseUpper, Menu, ChevronDown, Expand, Minimize } from 'lucide-vue-next'
+import { Bold, Italic, Underline, Strikethrough, Undo, Redo, AlignCenter, AlignLeft, AlignRight, AlignJustify,  Image, ChevronDown, Expand, Minimize, List, ListOrdered } from 'lucide-vue-next'
 import { useEditorStoreFactory } from '../../stores/index'
 import FontSize from '../ui/FontSize.vue'
 import FontFamily from '../ui/FontFamily.vue'
-import ColorPicker from '../ui/ColorPicker.vue'
+import LineHeight from '../ui/LineHeight.vue'
 import ThemeSwitcher from '../themes/ThemeSwitcher.vue'
 import Popover from '../ui/Popover.vue'
 import Keyword from '../ui/Keyword.vue'
+import { useEditorList } from '../composables/useEditorList'
 import { showTableGrid } from '../composables/useEditorTable'
 import { uploadImage } from '../composables/useEditorImage'
 import { AnimatePresence, motion } from 'motion-v'
@@ -139,6 +150,15 @@ const { minimize, toggleMinimize } = useMiminize()
 
 const props = defineProps<{ editorId: string }>()
 const editorStore = useEditorStoreFactory(props.editorId)
+
+// ====== Type definitions ======
+type FontWeight = 'thin' | 'light' | 'normal' | 'medium' | 'bold' | 'extrabold' | 'black'
+type FontStyle = 'normal' | 'italic'
+type TextDecoration = 'none' | 'underline' | 'line-through'
+type LineHeight = 'normal' | 'tight' | 'snug' | 'relaxed' | 'loose'
+
+// Use list composable
+const { bulletListOptions, numberedListOptions } = useEditorList(null, () => {}, props.editorId)
 
 // Menu state with smooth toggle
 const isMenusOpen = ref<boolean>(false)
@@ -153,8 +173,18 @@ const canRedo = computed(() => editorStore.historyIndex < editorStore.history.le
 const undo = () => editorStore.undo()
 const redo = () => editorStore.redo()
 
-// ====== Helper to toggle a value ======
-const toggleValue = (current: string, active: string, inactive = 'normal') => current === active ? inactive : active
+// ====== Typed toggle helper functions ======
+// ====== Font weight toggle helper ======
+const toggleFontWeight = (current: FontWeight, active: FontWeight, inactive: FontWeight = 'normal') => 
+  current === active ? inactive : active
+
+// ====== Font style toggle helper ======
+const toggleFontStyle = (current: FontStyle, active: FontStyle, inactive: FontStyle = 'normal') => 
+  current === active ? inactive : active
+
+// ====== Text decoration toggle helper ======
+const toggleTextDecoration = (current: TextDecoration, active: TextDecoration, inactive: TextDecoration = 'none') => 
+  current === active ? inactive : active
 
 // ====== Text formatting actions ======
 const textActions = computed(() => [
@@ -162,25 +192,25 @@ const textActions = computed(() => [
     label: 'Bold',
     icon: Bold,
     isActive: editorStore.fontWeight === 'bold',
-    onClick: () => editorStore.setFontWeight(toggleValue(editorStore.fontWeight, 'bold')),
+    onClick: () => editorStore.setFontWeight(toggleFontWeight(editorStore.fontWeight, 'bold')),
   },
   {
     label: 'Italic',
     icon: Italic,
     isActive: editorStore.fontStyle === 'italic',
-    onClick: () => editorStore.setFontStyle(toggleValue(editorStore.fontStyle, 'italic')),
+    onClick: () => editorStore.setFontStyle(toggleFontStyle(editorStore.fontStyle, 'italic')),
   },
   {
     label: 'Underline',
     icon: Underline,
     isActive: editorStore.textDecoration === 'underline',
-    onClick: () => editorStore.setTextDecoration(toggleValue(editorStore.textDecoration, 'underline', 'none')),
+    onClick: () => editorStore.setTextDecoration(toggleTextDecoration(editorStore.textDecoration, 'underline')),
   },
   {
     label: 'Strikethrough',
     icon: Strikethrough,
     isActive: editorStore.textDecoration === 'line-through',
-    onClick: () => editorStore.setTextDecoration(toggleValue(editorStore.textDecoration, 'line-through', 'none')),
+    onClick: () => editorStore.setTextDecoration(toggleTextDecoration(editorStore.textDecoration, 'line-through')),
   },
 ])
 
@@ -219,57 +249,4 @@ const capitalizeActions = computed(() => [
   },
 ])
 
-const formatList = (type: 'ul'|'ol', style?: string) => {
-  if (type === 'ul') {
-    document.execCommand('insertUnorderedList')
-  } else {
-    document.execCommand('insertOrderedList')
-  }
-  nextTick(() => {
-    const selection = window.getSelection()
-    if (selection && selection.anchorNode) {
-      let el = selection.anchorNode as HTMLElement | null
-      while (el && el.nodeName !== (type === 'ul' ? 'UL' : 'OL')) {
-        el = el.parentElement
-      }
-      if (el && style) {
-        el.classList.add(`list-${style}`)
-      }
-    }
-  })
-}
-
-const toggleBulletDisc = () => {
-  if (editorStore.bulletList === 'disc') {
-    editorStore.setBulletList('default')
-    document.execCommand('insertUnorderedList')
-  } else {
-    editorStore.setBulletList('disc')
-    formatList('ul', 'disc')
-  }
-}
-const toggleBulletCircle = () => {
-  if (editorStore.bulletList === 'circle') {
-    editorStore.setBulletList('default')
-    document.execCommand('insertUnorderedList')
-  } else {
-    editorStore.setBulletList('circle')
-    formatList('ul', 'circle')
-  }
-}
-const toggleBulletSquare = () => {
-  if (editorStore.bulletList === 'square') {
-    editorStore.setBulletList('default')
-    document.execCommand('insertUnorderedList')
-  } else {
-    editorStore.setBulletList('square')
-    formatList('ul', 'square')
-  }
-}
-
-const bulletList = [
-  { label: 'Disc', icon: Disc, isActive: editorStore.bulletList === 'disc', onClick: toggleBulletDisc },
-  { label: 'Circle', icon: Circle, isActive: editorStore.bulletList === 'circle', onClick: toggleBulletCircle },
-  { label: 'Square', icon: Square, isActive: editorStore.bulletList === 'square', onClick: toggleBulletSquare },
-]
 </script>

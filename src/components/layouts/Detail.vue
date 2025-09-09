@@ -56,6 +56,12 @@
             </p>
         </div>
         <div class="w-full flex flex-col items-center">
+            <span class="text-sm text-gray-500 uppercase tracking-wide">Line Height</span>
+            <p class="text-lg text-gray-700 font-mono bg-gray-100 rounded px-3 py-1 mt-1">
+                {{ editorStore.lineHeight }}
+            </p>
+        </div>
+        <div class="w-full flex flex-col items-center">
             <span class="text-sm text-gray-500 uppercase tracking-wide">Bullet List</span>
             <p class="text-lg text-gray-700 font-mono bg-gray-100 rounded px-3 py-1 mt-1">
                 {{ editorStore.bulletList }}

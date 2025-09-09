@@ -3,6 +3,7 @@ type FontFamily = 'Arial' | 'Times New Roman' | 'Courier New' | 'Georgia' | 'Ver
 type FontStyle = 'normal' | 'italic'
 type TextDecoration = 'none' | 'underline' | 'line-through'
 type TextAlign = 'left' | 'center' | 'right' | 'justify'
+type LineHeight = 'normal' | 'tight' | 'snug' | 'relaxed' | 'loose'
 type BulletList = 'default' | 'disc' | 'circle' | 'square'
 type NumberList = 'default' | 'decimal' | 'lower-alpha' | 'upper-alpha' | 'lower-roman' | 'upper-roman'
 type Link = string

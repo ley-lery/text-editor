@@ -30,7 +30,7 @@
     <!-- Overlay -->
     <div v-if="isOpen" @click="isOpen = false" class="absolute inset-0 z-10 opacity-35" />
 
-    <!-- Toolbar -->
+    <!-- Toolbar For Selected Text -->
     <AnimatePresence :initial="false">
       <motion.div
         v-if="isOpen"
@@ -66,6 +66,37 @@
             <label title="Text Color">
               <input type="color" @input="e => applyTextColor((e.target as HTMLInputElement).value)" class="w-6 h-6" />
             </label>
+            <!-- Text Alignment -->
+            <div class="flex items-center gap-1">
+              <ButtonIcon
+                v-for="btn in textAlignButtons"
+                :key="btn.label"
+                :isActive="btn.active"
+                @mousedown.prevent.stop="btn.action"
+                radius="lg"
+                :title="btn.label"
+              >
+                <component :is="btn.icon" />
+              </ButtonIcon>
+            </div>
+            <!-- Line Height Dropdown -->
+            <div class="flex items-center space-x-1" title="Line Height">
+              <LineChart class="w-4 h-4 text-zinc-600 dark:text-zinc-400" />
+              <select 
+                @change="applyLineHeight($event)"
+                class="px-2 py-1 text-xs bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-600 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-700"
+              >
+                <option 
+                  v-for="option in lineHeightOptions" 
+                  :key="option.value"
+                  :value="option.value"
+                  :disabled="option.disabled"
+                  :class="option.disabled ? 'text-zinc-500' : ''"
+                >
+                  {{ option.label }}
+                </option>
+              </select>
+            </div>
           </div>
           <!-- Link Input -->
           <transition name="slide-fade" class="mt-2">
@@ -330,7 +361,7 @@
       
     </Modal>
 
-    <!-- Test Use this  -->
+    <!-- Table Grid -->
     <TableGrid 
       :editorTable="{
         showTableGrid: showTableGrid.showTableGrid.value,
@@ -353,13 +384,17 @@ import { cn } from '../../lib/utils'
 import { useEditorStoreFactory } from '../../stores/index'
 import { computed, onMounted, ref, watch } from 'vue'
 import { motion, AnimatePresence } from 'motion-v'
-import { AlignCenter, AlignJustify, AlignLeft, AlignRight, AlignVerticalDistributeCenter, AlignVerticalDistributeEnd, AlignVerticalDistributeStart, Bold, Check, Italic, Link, Plus, Strikethrough, Underline, X } from 'lucide-vue-next'
+import { AlignCenter, AlignJustify, AlignLeft, AlignRight, AlignVerticalDistributeCenter, AlignVerticalDistributeEnd, AlignVerticalDistributeStart, Bold, Check, Italic, LineChart, Plus, Underline, X } from 'lucide-vue-next'
 import ButtonIcon from '../ui/ButtonIcon.vue'
 import { useEditorCommands } from '../composables/useEditorCommands'
 import { useEditorSelection } from '../composables/useEditorSelection'
 import { useEditorLink } from '../composables/useEditorLink'
+import { useEditorList } from '../composables/useEditorList'
 import { useEditorTable, showTableGrid } from '../composables/useEditorTable'
 import { useEditorImage, uploadImage } from '../composables/useEditorImage'
+import { useFormattingButtons, useTextAlignmentButtons, useLineHeightOptions } from '../composables/useSelectionToolbar'
+import { useSelectionTextAlignment, useSelectionLineHeight } from '../composables/useSelectionStyling'
+import { useDocumentStore } from '../../stores/useDocumentStore'
 import Modal from '../ui/Modal.vue'
 import { useDisclosure } from '../../hooks/useDisclosure'
 import TableGrid from './TableGrid.vue'
@@ -393,11 +428,25 @@ watch(() => editorStore.keyword, (newKeyword, oldKeyword) => {
 
 // ===== Computed =====
 const placeholderText = computed(() => props.placeholder || 'Start typing your document here…')
+
+// Line height helper function
+const getLineHeightValue = (lineHeight: string) => {
+  const lineHeightMap: Record<string, string> = {
+    'normal': 'normal',
+    'tight': '1.25',
+    'snug': '1.375', 
+    'relaxed': '1.625',
+    'loose': '2'
+  }
+  return lineHeightMap[lineHeight] || 'normal'
+}
+
 const placeholderStyle = computed(() => ({
   fontSize: editorStore.fontSize ? `${editorStore.fontSize}px` : undefined,
   fontWeight: editorStore.fontWeight,
   fontFamily: editorStore.fontFamily,
   textAlign: editorStore.textAlign,
+  lineHeight: getLineHeightValue(editorStore.lineHeight),
 }))
 
 const editorStyle = computed(() => ({
@@ -408,8 +457,8 @@ const editorStyle = computed(() => ({
   color: editorStore.textColor,
   fontFamily: editorStore.fontFamily,
   textAlign: editorStore.textAlign,
-  listStyleType: editorStore.bulletList,
   textTransform: editorStore.capitalize,
+  lineHeight: getLineHeightValue(editorStore.lineHeight),
 }))
 
 const editorClasses = computed(() =>
@@ -453,6 +502,33 @@ const { handleSelection, applyBackgroundColor, applyTextColor } = useEditorSelec
 const { exec, insertKeyword } = useEditorCommands(editor, updateContent)
 const { showLinkInput, linkUrl, toggleLink, applyLink, handleLinkInputKeydown, handleLinkClick, getLink } = useEditorLink(editor, updateContent)
 const { triggerImageUpload } = useEditorImage(editor, updateContent)
+const { 
+  toggleBulletDisc, 
+  isUnorderedList
+} = useEditorList(editor, updateContent, props.editorId)
+
+// ===== Selection Toolbar Composables =====
+const { applyTextAlignment } = useSelectionTextAlignment(editor, editorStore, content, handleSelection)
+const { applyLineHeight } = useSelectionLineHeight(editor, editorStore, content, handleSelection)
+const { lineHeightOptions } = useLineHeightOptions()
+const { toolbarButtons } = useFormattingButtons(exec, toggleBulletDisc, toggleLink, isUnorderedList, getLink)
+const { textAlignButtons } = useTextAlignmentButtons(applyTextAlignment, computed(() => editorStore.textAlign))
+
+// ===== Document Store Integration =====
+const { currentDocument, updateDocument } = useDocumentStore()
+
+// Auto-save functionality with debounce
+let autoSaveTimeout: any | null = null
+watch([content, () => editorStore.fontSize, () => editorStore.fontFamily, () => editorStore.textAlign], 
+  () => {
+    if (autoSaveTimeout) clearTimeout(autoSaveTimeout)
+    autoSaveTimeout = setTimeout(() => {
+      if (currentDocument.value) {
+        updateDocument(currentDocument.value.id, editorStore, content.value)
+      }
+    }, 1000) // Auto-save after 1 second of inactivity
+  }
+)
 
 // Table composable
 const {
@@ -479,7 +555,6 @@ const {
   deleteColumn,
   deleteRow,
   deleteSelectedCells,
-  closeTableModal,
   textAlign,
   verticalAlign,
   fontSize,
@@ -522,43 +597,8 @@ watch(() => uploadImage.openFile.value, (shouldOpen) => {
   }
 })
 
-// ===== Toolbar Actions =====
-const toolbarButtons = computed(() => {
-  const currentLink = getLink()
-  
-  return [
-    {
-      label: 'Bold',
-      icon: Bold,
-      action: () => exec('bold'),
-      active: document.queryCommandState('bold')
-    },
-    {
-      label: 'Italic',
-      icon: Italic,
-      action: () => exec('italic'),
-      active: document.queryCommandState('italic')
-    },
-    {
-      label: 'Underline',
-      icon: Underline,
-      action: () => exec('underline'),
-      active: document.queryCommandState('underline')
-    },
-    {
-      label: 'Strikethrough',
-      icon: Strikethrough,
-      action: () => exec('strikeThrough'),
-      active: document.queryCommandState('strikeThrough')
-    },
-    {
-      label: 'Link',
-      icon: Link,
-      action: () => toggleLink(),
-      active: !!currentLink
-    },
-  ]
-})
+// ===== Toolbar Actions (using composables) =====
+// toolbarButtons, textAlignButtons, and lineHeightOptions are now provided by composables above
 
 const cellTextAlign = computed(() => [
   { label: 'Left', icon: AlignLeft, action: () => setCellTextAlign('left'), active: textAlign.value === 'left' },
@@ -668,6 +708,56 @@ onMounted(() => {
 
 .dark :deep(.preview-table td) {
   background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* List styles */
+:deep(ul) {
+  list-style-type: disc;
+  margin: 1em 0;
+  padding-left: 40px;
+}
+
+:deep(ol) {
+  list-style-type: decimal;
+  margin: 1em 0;
+  padding-left: 40px;
+}
+
+:deep(ul.list-disc) {
+  list-style-type: disc;
+}
+
+:deep(ul.list-circle) {
+  list-style-type: circle;
+}
+
+:deep(ul.list-square) {
+  list-style-type: square;
+}
+
+:deep(ol.list-decimal) {
+  list-style-type: decimal;
+}
+
+:deep(ol.list-lower-alpha) {
+  list-style-type: lower-alpha;
+}
+
+:deep(ol.list-upper-alpha) {
+  list-style-type: upper-alpha;
+}
+
+:deep(ol.list-lower-roman) {
+  list-style-type: lower-roman;
+}
+
+:deep(ol.list-upper-roman) {
+  list-style-type: upper-roman;
+}
+
+:deep(li) {
+  margin: 0.25em 0;
+  line-height: 1.5;
 }
 
 /* Keyword placeholder styles */

@@ -5,7 +5,7 @@
   </div>  
 </template>
   
-  <script setup lang="ts">
+<script setup lang="ts">
   import { onMounted } from 'vue';
   import TextEditor from './components/layouts/TextEditor.vue';
   import { useEditorStoreFactory } from './stores/index'
@@ -15,5 +15,4 @@
     const properties = editorStore.storeProperties
     console.log(properties, "properties")
   })
-
-  </script>
+</script>
